@@ -23,7 +23,8 @@ func (checkOwner CheckIfOwner) checkIfAdmin(c *fiber.Ctx) error {
 
 	// if user is not admin or owner return unauthorized
 	if !claims[check].(bool) {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiberUnauthorizedError)
+		return c.Status(fiber.StatusUnauthorized).JSON(
+			&fiber.Map{"error": "unauthorized"})
 	}
 
 	return c.Next()

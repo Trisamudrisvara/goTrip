@@ -17,6 +17,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/storage/postgres/v3"
+	// "github.com/gofiber/storage/redis/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
@@ -85,10 +86,11 @@ func main() {
 		KeyLookup:  "form:csrf",
 		CookieName: "csrf",
 		ContextKey: "csrf",
-		// ErrorHandler: func(c *fiber.Ctx, err error) error {
-		// 	log.Println("CSRF Error:", err)
-		// 	return c.SendStatus(fiber.StatusForbidden)
-		// },
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			// log.Println("CSRF Error:", err)
+			return c.Status(fiber.StatusForbidden).JSON(
+				&fiber.Map{"error": "forbidden"})
+		},
 		Storage: postgres.New(postgres.Config{
 			DB:    conn,
 			Table: "csrf_token",
@@ -105,6 +107,12 @@ func main() {
 		Max:        3,
 		Expiration: time.Second,
 	}
+
+	// Cache Config
+	// cacheConf := cache.Config{
+	// 	Storage:    redis.New(),
+	// 	Expiration: 11 * time.Minute,
+	// }
 
 	// prometheus config
 	// prometheus := fiberprometheus.New("trip")

@@ -22,9 +22,9 @@ var (
 	ownerUuid string
 
 	// Defining Errors
-	fiberUnknownError         = &fiber.Map{"error": "some unknown error occured"}
-	fiberUndefinedParamError  = &fiber.Map{"error": "some params are undefined"}
-	fiberUnauthorizedError    = &fiber.Map{"error": "unauthorized"}
+	fiberUnknownError        = &fiber.Map{"error": "some unknown error occured"}
+	fiberUndefinedParamError = &fiber.Map{"error": "some params are undefined"}
+	// fiberUnauthorizedError    = &fiber.Map{"error": "unauthorized"}
 	fiberInvalidID            = &fiber.Map{"error": "invalid id"}
 	fiberInvalidDestinationID = &fiber.Map{"error": "invalid destination id"}
 	fiberInvalidEmailPass     = &fiber.Map{"error": "invalid email or password"}
@@ -48,7 +48,7 @@ func (r *Repo) SetupRoutes(app *fiber.App) {
 	app.Post("/register", r.register)
 
 	// For testing csrf
-	app.Post("", hello)
+	app.Post("", testRoute)
 
 	// initializing /destination route
 	destination := app.Group("/destination")
@@ -84,7 +84,7 @@ func (r *Repo) SetupRoutes(app *fiber.App) {
 	// Middleware to check if user is admin
 	app.Use(checkOwner.checkIfAdmin)
 	// test if middleware is working properly
-	app.Get("", hello)
+	app.Get("", testRoute)
 
 	// changes destination
 	destination.Post("", r.createDestination)
@@ -97,8 +97,8 @@ func (r *Repo) SetupRoutes(app *fiber.App) {
 	trip.Delete("/:id", r.deleteTrip)
 }
 
-func hello(c *fiber.Ctx) error {
-	return c.SendString("Hello World")
+func testRoute(c *fiber.Ctx) error {
+	return c.JSON(&fiber.Map{"msg": "working"})
 }
 
 // loads neccessary environment variables

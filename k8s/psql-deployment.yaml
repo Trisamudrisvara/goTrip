@@ -33,11 +33,11 @@ spec:
               key: NAME
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/data # Default PostgreSQL data directory
+          mountPath: /var/lib/postgresql/data
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
-          claimName: postgres-pvc # Use the PVC defined below
+          claimName: postgres-pvc
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -48,4 +48,4 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi # Adjust size as needed      
+      storage: 1Gi
