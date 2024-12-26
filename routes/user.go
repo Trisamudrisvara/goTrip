@@ -31,15 +31,15 @@ func (r *Repo) updateUser(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 
 	// Validate input
-	if oldEmail == "" || newEmail == "" || name == "" {
+	if newEmail == "" && name == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiberUndefinedParamError)
 	}
 
 	// Prepare user data for database update
 	usr := db.UpdateUserParams{
 		Email:   oldEmail,
-		Email_2: newEmail,
-		Name:    name,
+		Column2: newEmail,
+		Column3: name,
 	}
 
 	// Update user in database

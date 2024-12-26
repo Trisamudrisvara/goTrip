@@ -4,7 +4,7 @@ info:
   description: API for managing travel destinations and trips
   version: 1.0.0
 paths:
-  /login:
+  /csrf:
     get:
       summary: Generate CSRF token
       tags:
@@ -19,6 +19,7 @@ paths:
                 properties:
                   csrf:
                     type: string
+  /login:
     post:
       summary: Login user
       tags:
@@ -109,12 +110,15 @@ paths:
                   type: string
                 attraction:
                   type: string
+                pic_url:
+                  type: string
                 csrf:
                   type: string
               required:
                 - name
                 - description
                 - attraction
+                - pic_url
                 - csrf
       responses:
         '201':
@@ -140,13 +144,12 @@ paths:
                   type: string
                 attraction:
                   type: string
+                pic_url:
+                  type: string
                 csrf:
                   type: string
               required:
                 - id
-                - name
-                - description
-                - attraction
                 - csrf
       responses:
         '200':
@@ -272,16 +275,30 @@ paths:
                   type: string
               required:
                 - id
-                - name
-                - start_date
-                - end_date
-                - destination_id
                 - csrf
       responses:
         '200':
           description: Trip updated successfully
       security:
         - jwt: []
+  /trip/destination/{id}:
+    get:
+      summary: Get trip by ID
+      tags:
+        - Trip
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trip retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
   /trip/{id}:
     get:
       summary: Get trip by ID
@@ -370,8 +387,6 @@ paths:
                 csrf:
                   type: string
               required:
-                - new_email
-                - name
                 - csrf
       responses:
         '200':

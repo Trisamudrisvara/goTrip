@@ -11,8 +11,9 @@ INSERT INTO users (
 
 -- name: UpdateUser :exec
 UPDATE users
- SET email = $2,
- name = $3
+ SET
+  email = COALESCE(NULLIF($2, ''), email),
+  name = COALESCE(NULLIF($3, ''), name)
 WHERE email = $1;
 
 
@@ -26,9 +27,9 @@ UPDATE users SET admin = false
 
 -- name: CreateDestination :exec
 INSERT INTO destination (
-  id, name, description, attraction
+  id, name, description, attraction, pic_url
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5
 );
 
 -- name: ListDestinations :many
@@ -40,9 +41,11 @@ SELECT name, description, attraction FROM destination
 
 -- name: UpdateDestination :exec
 UPDATE destination
- SET name = $2,
- description = $3,
- attraction = $4
+ SET
+  name = COALESCE(NULLIF($2, ''), name),
+  description = COALESCE(NULLIF($3, ''), description),
+  attraction = COALESCE(NULLIF($4, ''), attraction),
+  pic_url = COALESCE(NULLIF($5, ''), pic_url)
 WHERE id = $1;
 
 -- name: DeleteDestination :exec
@@ -64,12 +67,17 @@ SELECT * FROM trip;
 SELECT name, start_date, end_date, destination_id FROM trip
  WHERE id = $1 LIMIT 1;
 
+-- name: GetTripsByDestinationID :many
+SELECT id, name, start_date, end_date FROM trip
+ WHERE destination_id = $1;
+
 -- name: UpdateTrip :exec
 UPDATE trip
- SET name = $2,
- start_date = $3,
- end_date = $4,
- destination_id = $5
+ SET
+  name = COALESCE(NULLIF($2, ''), name),
+  start_date = COALESCE(NULLIF($3::date, NULL), start_date),
+  end_date = COALESCE(NULLIF($4::date, NULL), end_date),
+  destination_id = COALESCE(NULLIF($5::uuid, NULL), destination_id)
 WHERE id = $1;
 
 -- name: DeleteTrip :exec

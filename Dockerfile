@@ -1,17 +1,10 @@
-# Use the official Go image as the base image
-FROM golang:1.23
-
-# Set the working directory in the container
+FROM golang:1.23 AS builder
 WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -tags netgo -ldflags '-s -w' -o trip .
 
-# Copy the application files into the working directory
-COPY . /app
-
-# Build the application
-RUN go build -tags netgo -ldflags '-s -w' -o app
-
-# Expose port
+FROM scratch
+COPY --from=builder /app/trip .
+COPY --from=builder /app/swagger.yaml .
 EXPOSE $API_PORT
-
-# Define the entry point for the container
-CMD ["./app"]
+CMD ["./trip"]

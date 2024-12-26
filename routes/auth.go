@@ -79,7 +79,7 @@ func (r *Repo) login(c *fiber.Ctx) error {
 		"name":  GetPass.Name,
 		"admin": GetPass.Admin,
 		"owner": isOwner,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(),
 	}
 
 	// Create and sign JWT token

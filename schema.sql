@@ -11,15 +11,16 @@ CREATE TABLE destination (
     id          UUID         PRIMARY KEY,
     name        VARCHAR(128) NOT NULL,
     description text         NOT NULL,
-    attraction  text         NOT NULL
+    attraction  text         NOT NULL,
+    pic_url     VARCHAR(201) NOT NULL
 );
 
 CREATE TABLE trip (
     id             UUID         PRIMARY KEY,
     name           VARCHAR(128) NOT NULL,
-    start_date     VARCHAR(33)  NOT NULL,
-    end_date       VARCHAR(33)  NOT NULL,
-    destination_id UUID         REFERENCES destination(id)
+    start_date     DATE         NOT NULL,
+    end_date       DATE         NOT NULL,
+    destination_id UUID         REFERENCES destination(id) ON DELETE CASCADE
 );
 
 -- +goose Down

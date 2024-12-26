@@ -27,6 +27,7 @@ var (
 	// fiberUnauthorizedError    = &fiber.Map{"error": "unauthorized"}
 	fiberInvalidID            = &fiber.Map{"error": "invalid id"}
 	fiberInvalidDestinationID = &fiber.Map{"error": "invalid destination id"}
+	fiberInvalidTimeFormat    = &fiber.Map{"error": "invalid time format"}
 	fiberInvalidEmailPass     = &fiber.Map{"error": "invalid email or password"}
 	fiberValTooLong33         = &fiber.Map{"error": "value should not be more than 33 characters"}
 	fiberNameTooLong128       = &fiber.Map{"error": "name should not be more than 128 characters"}
@@ -42,8 +43,8 @@ func (r *Repo) SetupRoutes(app *fiber.App) {
 	})
 
 	// Auth
+	app.Get("/csrf", getCsrfToken)
 	login := app.Group("/login")
-	login.Get("", getCsrfToken)
 	login.Post("", r.login)
 	app.Post("/register", r.register)
 
@@ -59,6 +60,7 @@ func (r *Repo) SetupRoutes(app *fiber.App) {
 	trip := app.Group("/trip")
 	trip.Get("", r.ListTrips)
 	trip.Get("/:id", r.getTrip)
+	trip.Get("/destination/:id", r.getTripsByDestinationID)
 
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{

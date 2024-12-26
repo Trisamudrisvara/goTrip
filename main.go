@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	// "github.com/ansrivas/fiberprometheus/v2"
@@ -12,12 +13,16 @@ import (
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cache"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/storage/postgres/v3"
+
+	"github.com/gofiber/storage/memory"
+	// "github.com/gofiber/storage/postgres/v3"
 	// "github.com/gofiber/storage/redis/v3"
+	// "github.com/gofiber/storage/memcache"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
@@ -41,7 +46,6 @@ func main() {
 	}
 
 	dsn := os.Getenv("DB_URL")
-
 	if dsn == "" {
 		// Construct database connection string
 		dsn = fmt.Sprintf(
@@ -71,6 +75,8 @@ func main() {
 		Queries: queries,
 	}
 
+	store := memory.New()
+
 	// custom JSON encoder/decoder for performance
 	fiberConfig := fiber.Config{
 		// Prefork:     true,
@@ -82,37 +88,64 @@ func main() {
 	app := fiber.New(fiberConfig)
 
 	// Configure CSRF middleware
-	csrfConf := csrf.Config{
-		KeyLookup:  "form:csrf",
-		CookieName: "csrf",
-		ContextKey: "csrf",
+	// cookieSecure = false if err happens
+	cookieSecure, _ := strconv.ParseBool(os.Getenv("CookieSecure"))
+	cookieSameSite := os.Getenv("CookieSameSite")
+	if cookieSameSite == "" {
+		cookieSameSite = "Lax"
+	}
+
+	csrf := csrf.New(csrf.Config{
+		KeyLookup:      "form:csrf",
+		CookieName:     "csrf",
+		ContextKey:     "csrf",
+		CookieSameSite: cookieSameSite,
+		CookieSecure:   cookieSecure,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			// log.Println("CSRF Error:", err)
 			return c.Status(fiber.StatusForbidden).JSON(
 				&fiber.Map{"error": "forbidden"})
 		},
-		Storage: postgres.New(postgres.Config{
-			DB:    conn,
-			Table: "csrf_token",
-		})}
+		// Storage: postgres.New(postgres.Config{
+		// 	DB:    conn,
+		// 	Table: "csrf_token",
+		// }),
+		Storage: store,
+	})
 
 	// Configure Swagger
-	swaggerConf := swagger.Config{
+	swagger := swagger.New(swagger.Config{
 		Title:    "Trip API",
 		FilePath: "swagger.yaml",
-	}
+	})
 
 	// Rate Limiter Config
-	limiterConf := limiter.Config{
+	limiter := limiter.New(limiter.Config{
 		Max:        3,
 		Expiration: time.Second,
-	}
+		Storage:    store,
+	})
 
 	// Cache Config
-	// cacheConf := cache.Config{
-	// 	Storage:    redis.New(),
-	// 	Expiration: 11 * time.Minute,
-	// }
+	cache := cache.New(cache.Config{
+		Next: func(c *fiber.Ctx) bool {
+			return c.Path() == "/csrf" && c.Method() == "GET"
+		},
+		Storage:      store,
+		Expiration:   1 * time.Minute,
+		CacheControl: true,
+	})
+
+	// Cors Config
+	origin := os.Getenv("ALLOWED_ORIGIN")
+	if origin == "" {
+		origin = "http://localhost"
+	}
+
+	cors := cors.New(cors.Config{
+		AllowOrigins:     origin,
+		AllowCredentials: true,
+	})
 
 	// prometheus config
 	// prometheus := fiberprometheus.New("trip")
@@ -120,15 +153,18 @@ func main() {
 	// prometheus.SetSkipPaths([]string{"/ping", "/favicon.ico"})
 
 	// Middlewares: logger, swagger, recover, cache, rate limiter & CSRF protection
-	app.Use(logger.New(), limiter.New(limiterConf), cache.New(),
-		swagger.New(swaggerConf), csrf.New(csrfConf), recover.New())
+	app.Use(logger.New(), limiter, cors, csrf, cache, swagger, recover.New())
 
 	// Set up routes
 	repo.SetupRoutes(app)
 
-	// Start the server
 	port := os.Getenv("API_PORT")
-	fmt.Println("Starting go server at port", port)
+	if port == "" {
+		port = "3000"
+	}
+
+	// Start the server
+	// fmt.Println("Starting go server at port", port)
 	port = ":" + port
 	log.Fatal(app.Listen(port))
 }

@@ -22,13 +22,11 @@ func (r *Repo) ListDestinations(c *fiber.Ctx) error {
 	}
 
 	if len(destinations) == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(
+		return c.Status(fiber.StatusNotFound).JSON(
 			&fiber.Map{"error": "no destinations found"})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"data": &destinations,
-	})
+	return c.Status(fiber.StatusOK).JSON(&fiber.Map{"data": &destinations})
 }
 
 // getDestination retrieves a single destination by ID
@@ -62,21 +60,37 @@ func (r *Repo) getDestination(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiberUnknownError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(&fiber.Map{
-		"data": &destination,
-	})
+	return c.Status(fiber.StatusOK).JSON(&fiber.Map{"data": &destination})
 }
 
 // createDestination adds a new destination to the database
 func (r *Repo) createDestination(c *fiber.Ctx) error {
 	// Extract name, description, and password from form data
+	id := c.FormValue("id")
 	name := c.FormValue("name")
 	description := c.FormValue("description")
 	attraction := c.FormValue("attraction")
+	picUrl := c.FormValue("pic_url")
 
 	// if any of the form data is missing return error
-	if name == "" || description == "" || attraction == "" {
+	if name == "" || description == "" || attraction == "" || picUrl == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiberUndefinedParamError)
+	}
+
+	Uuid := uuid.New()
+	if id != "" {
+		var err error
+		Uuid, err = uuid.Parse(id)
+
+		if err != nil {
+			// return error if id is invalid
+			if strings.HasPrefix(err.Error(), "invalid UUID") {
+				return c.Status(fiber.StatusBadRequest).JSON(fiberInvalidDestinationID)
+			}
+
+			log.Println("Error in parsing uuid:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiberUnknownError)
+		}
 	}
 
 	if len(name) > 128 {
@@ -85,12 +99,13 @@ func (r *Repo) createDestination(c *fiber.Ctx) error {
 
 	destination := db.CreateDestinationParams{
 		ID: pgtype.UUID{
-			Bytes: uuid.New(),
+			Bytes: Uuid,
 			Valid: true,
 		},
 		Name:        name,
 		Description: description,
 		Attraction:  attraction,
+		PicUrl:      picUrl,
 	}
 
 	err := r.Queries.CreateDestination(r.Ctx, destination)
@@ -111,9 +126,14 @@ func (r *Repo) updateDestination(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 	description := c.FormValue("description")
 	attraction := c.FormValue("attraction")
+	picUrl := c.FormValue("pic_url")
 
 	// if any of the form data is missing return error
-	if id == "" || name == "" || description == "" || attraction == "" {
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiberUndefinedParamError)
+	}
+
+	if name == "" && description == "" && attraction == "" && picUrl == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiberUndefinedParamError)
 	}
 
@@ -138,9 +158,10 @@ func (r *Repo) updateDestination(c *fiber.Ctx) error {
 			Bytes: uuid,
 			Valid: true,
 		},
-		Name:        name,
-		Description: description,
-		Attraction:  attraction,
+		Column2: name,
+		Column3: description,
+		Column4: attraction,
+		Column5: picUrl,
 	}
 
 	err = r.Queries.UpdateDestination(r.Ctx, destination)
