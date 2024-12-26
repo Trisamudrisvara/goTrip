@@ -32,6 +32,11 @@ spec:
             configMapKeyRef:
               name: go-app-config
               key: API_PORT
+        - name: ALLOWED_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: go-app-config
+              key: ALLOWED_ORIGIN
         - name: NAME
           valueFrom:
             configMapKeyRef:

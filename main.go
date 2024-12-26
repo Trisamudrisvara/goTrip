@@ -139,7 +139,7 @@ func main() {
 	// Cors Config
 	origin := os.Getenv("ALLOWED_ORIGIN")
 	if origin == "" {
-		origin = "http://localhost"
+		origin = "http://localhost:8080, http://127.0.0.1:8080"
 	}
 
 	cors := cors.New(cors.Config{
