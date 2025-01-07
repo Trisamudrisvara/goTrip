@@ -6,5 +6,5 @@ data:
  HOST: "postgres"
  PORT: "5432"
  NAME: "trip"
- API_PORT: "8000"
+ API_PORT: "3000"
  ALLOWED_ORIGIN: "http://localhost:8080"

@@ -129,7 +129,7 @@ func main() {
 	// Cache Config
 	cache := cache.New(cache.Config{
 		Next: func(c *fiber.Ctx) bool {
-			return c.Path() == "/csrf" && c.Method() == "GET"
+			return c.Path() == "/csrf" || c.Path() == "/csrf/"
 		},
 		Storage:      store,
 		Expiration:   1 * time.Minute,
